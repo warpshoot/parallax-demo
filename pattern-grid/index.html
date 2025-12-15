@@ -328,13 +328,13 @@
                         ctx.moveTo(x + size, y + size);
                         ctx.lineTo(x + size, y);
                         ctx.lineTo(x, y);
-                        ctx.arc(x, y + size, size, -Math.PI / 2, -Math.PI, true);
+                        ctx.arc(x, y + size, size, (3 * Math.PI) / 2, Math.PI, true);
                         break;
                     case 'br':
                         ctx.moveTo(x, y);
                         ctx.lineTo(x, y + size);
                         ctx.lineTo(x + size, y + size);
-                        ctx.arc(x + size, y + size, size, -Math.PI, -Math.PI / 2, true);
+                        ctx.arc(x + size, y + size, size, Math.PI, (3 * Math.PI) / 2, true);
                         break;
                 }
             }
