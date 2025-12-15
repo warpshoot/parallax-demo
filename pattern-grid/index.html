@@ -310,31 +310,35 @@
                         break;
                 }
             } else {
-                // Inverted arc: draw the 3 corners + arc as a single path
+                // Inverted arc: draw from arc end, through 3 corners, back to arc start
                 switch (corner) {
                     case 'tl':
-                        ctx.moveTo(x + size, y);
+                        // Arc from 90° to 0° (bottom to right), then corners
+                        ctx.arc(x, y, size, Math.PI / 2, 0, true);
+                        ctx.lineTo(x + size, y);
                         ctx.lineTo(x + size, y + size);
                         ctx.lineTo(x, y + size);
-                        ctx.arc(x, y, size, Math.PI / 2, 0, true);
                         break;
                     case 'tr':
-                        ctx.moveTo(x + size, y + size);
+                        // Arc from 180° to 90° (left to bottom), then corners
+                        ctx.arc(x + size, y, size, Math.PI, Math.PI / 2, true);
+                        ctx.lineTo(x + size, y + size);
                         ctx.lineTo(x, y + size);
                         ctx.lineTo(x, y);
-                        ctx.arc(x + size, y, size, Math.PI, Math.PI / 2, true);
                         break;
                     case 'bl':
-                        ctx.moveTo(x + size, y + size);
-                        ctx.lineTo(x + size, y);
+                        // Arc from 0° to 270° (right to top), then corners
+                        ctx.arc(x, y + size, size, 0, (3 * Math.PI) / 2, true);
                         ctx.lineTo(x, y);
-                        ctx.arc(x, y + size, size, (3 * Math.PI) / 2, Math.PI, true);
+                        ctx.lineTo(x + size, y);
+                        ctx.lineTo(x + size, y + size);
                         break;
                     case 'br':
-                        ctx.moveTo(x, y);
+                        // Arc from 270° to 180° (top to left), then corners
+                        ctx.arc(x + size, y + size, size, (3 * Math.PI) / 2, Math.PI, true);
                         ctx.lineTo(x, y + size);
-                        ctx.lineTo(x + size, y + size);
-                        ctx.arc(x + size, y + size, size, Math.PI, (3 * Math.PI) / 2, true);
+                        ctx.lineTo(x, y);
+                        ctx.lineTo(x + size, y);
                         break;
                 }
             }
