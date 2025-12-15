@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+  <title>Cyber-Parallax v1.0</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  
+  <div id="container">
+    <!-- Center Cube Layer -->
+    <div id="layer-front" class="layer">
+      <div class="cube" style="left: calc(50% - 100px); top: calc(50% - 100px);">
+        <div class="cube-face front">FRONT</div>
+        <div class="cube-face back">BACK</div>
+        <div class="cube-face right">RIGHT</div>
+        <div class="cube-face left">LEFT</div>
+        <div class="cube-face top">TOP</div>
+        <div class="cube-face bottom">BOTTOM</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="video-container">
+    <video id="video" playsinline muted></video>
+  </div>
+
+  <div id="status">SYSTEM :: READY</div>
+  <div id="debug">--</div>
+  
+  <button id="start-btn">INITIALIZE</button>
+
+  <!-- MediaPipe Dependencies -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/face_detection.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  
+  <!-- App Logic -->
+  <script src="script.js"></script>
+</body>
+</html>
