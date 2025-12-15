@@ -76,6 +76,12 @@
             width: 150px;
         }
 
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
         .canvas-container {
             flex: 1;
             display: flex;
@@ -88,7 +94,6 @@
         canvas {
             border: 2px solid #3a3a3a;
             cursor: crosshair;
-            image-rendering: pixelated;
         }
 
         .size-display {
@@ -142,6 +147,13 @@
         </div>
 
         <div class="control-group">
+            <label>
+                <input type="checkbox" id="transparentBg">
+                Transparent BG
+            </label>
+        </div>
+
+        <div class="control-group">
             <button id="clearBtn">Clear</button>
             <button id="downloadBtn">Download</button>
             <button id="copyBtn">Copy</button>
@@ -154,24 +166,26 @@
 
     <script>
         const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { alpha: true });
 
+        const SCALE = 4; // High-DPI scaling for smooth rendering
         let gridSize = 32;
         let cellSize = 20;
         let zoom = 1.0;
-        let mode = 'triangle'; // 'triangle', 'arc', or 'rect'
+        let mode = 'triangle';
         let currentColor = '#000000';
         let bgColor = '#ffffff';
+        let transparentBg = false;
         let grid = [];
 
         // Initialize grid
         function initGrid() {
             grid = Array(gridSize).fill(null).map(() =>
                 Array(gridSize).fill(null).map(() => ({
-                    type: null, // 'triangle', 'arc', or 'rect'
-                    corner: null, // 'tl', 'tr', 'bl', 'br'
+                    type: null,
+                    corner: null,
                     color: null,
-                    inverted: false // for inverted shapes
+                    inverted: false
                 }))
             );
         }
@@ -179,14 +193,15 @@
         // Set canvas size
         function resizeCanvas() {
             const displaySize = gridSize * cellSize * zoom;
-            canvas.width = gridSize * cellSize;
-            canvas.height = gridSize * cellSize;
+            canvas.width = gridSize * cellSize * SCALE;
+            canvas.height = gridSize * cellSize * SCALE;
             canvas.style.width = displaySize + 'px';
             canvas.style.height = displaySize + 'px';
+            ctx.scale(SCALE, SCALE);
             render();
         }
 
-        // Better corner detection using distance from corners
+        // Better corner detection
         function getCornerByDistance(relX, relY) {
             const corners = [
                 { name: 'tl', x: 0, y: 0 },
@@ -241,7 +256,6 @@
                         break;
                 }
             } else {
-                // Inverted triangle (3 corners)
                 switch (corner) {
                     case 'tl':
                         ctx.moveTo(x + size, y);
@@ -270,11 +284,10 @@
             ctx.fill();
         }
 
-        // Draw arc (quarter circle)
+        // Draw arc
         function drawArc(x, y, size, corner, color, inverted) {
-            ctx.fillStyle = color;
-
             if (!inverted) {
+                ctx.fillStyle = color;
                 ctx.beginPath();
                 switch (corner) {
                     case 'tl':
@@ -297,9 +310,14 @@
                 ctx.closePath();
                 ctx.fill();
             } else {
-                // Inverted arc (fill everything except the arc)
+                // Draw inverted arc: fill square, then cut out the arc
+                ctx.fillStyle = color;
                 ctx.fillRect(x, y, size, size);
+
+                // Cut out the arc portion
+                ctx.save();
                 ctx.globalCompositeOperation = 'destination-out';
+                ctx.fillStyle = 'rgba(0,0,0,1)';
                 ctx.beginPath();
                 switch (corner) {
                     case 'tl':
@@ -321,30 +339,39 @@
                 }
                 ctx.closePath();
                 ctx.fill();
-                ctx.globalCompositeOperation = 'source-over';
+                ctx.restore();
             }
         }
 
         // Render grid
-        function render() {
-            // Clear canvas with background color
-            ctx.fillStyle = bgColor;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        function render(hideGrid = false) {
+            ctx.save();
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.restore();
 
-            // Draw grid lines
-            ctx.strokeStyle = bgColor === '#ffffff' ? '#e0e0e0' : '#444444';
-            ctx.lineWidth = 1;
+            // Draw background
+            if (!transparentBg || hideGrid) {
+                ctx.fillStyle = bgColor;
+                ctx.fillRect(0, 0, gridSize * cellSize, gridSize * cellSize);
+            }
 
-            for (let i = 0; i <= gridSize; i++) {
-                ctx.beginPath();
-                ctx.moveTo(i * cellSize, 0);
-                ctx.lineTo(i * cellSize, canvas.height);
-                ctx.stroke();
+            // Draw grid lines (only if not exporting)
+            if (!hideGrid) {
+                ctx.strokeStyle = bgColor === '#ffffff' ? '#e0e0e0' : '#444444';
+                ctx.lineWidth = 1 / SCALE;
 
-                ctx.beginPath();
-                ctx.moveTo(0, i * cellSize);
-                ctx.lineTo(canvas.width, i * cellSize);
-                ctx.stroke();
+                for (let i = 0; i <= gridSize; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(i * cellSize, 0);
+                    ctx.lineTo(i * cellSize, gridSize * cellSize);
+                    ctx.stroke();
+
+                    ctx.beginPath();
+                    ctx.moveTo(0, i * cellSize);
+                    ctx.lineTo(gridSize * cellSize, i * cellSize);
+                    ctx.stroke();
+                }
             }
 
             // Draw cells
@@ -371,8 +398,8 @@
         // Handle canvas click
         function handleClick(x, y) {
             const displaySize = gridSize * cellSize * zoom;
-            const scaleX = canvas.width / displaySize;
-            const scaleY = canvas.height / displaySize;
+            const scaleX = (gridSize * cellSize) / displaySize;
+            const scaleY = (gridSize * cellSize) / displaySize;
 
             const canvasX = x * scaleX;
             const canvasY = y * scaleY;
@@ -384,7 +411,6 @@
                 const cell = grid[row][col];
 
                 if (mode === 'rect') {
-                    // Rectangle mode: toggle fill
                     if (cell.type === 'rect') {
                         cell.type = null;
                         cell.color = null;
@@ -395,12 +421,10 @@
                         cell.inverted = false;
                     }
                 } else {
-                    // Triangle or Arc mode
                     const relX = (canvasX % cellSize) / cellSize;
                     const relY = (canvasY % cellSize) / cellSize;
                     const corner = getCornerByDistance(relX, relY);
 
-                    // Click cycle: normal → inverted → clear
                     if (cell.type === mode && cell.corner === corner) {
                         if (!cell.inverted) {
                             cell.inverted = true;
@@ -429,7 +453,6 @@
             handleClick(x, y);
         });
 
-        // Touch support for mobile
         canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
             const touch = e.touches[0];
@@ -458,6 +481,12 @@
 
         document.getElementById('bgColorPicker').addEventListener('input', (e) => {
             bgColor = e.target.value;
+            render();
+        });
+
+        // Transparent background checkbox
+        document.getElementById('transparentBg').addEventListener('change', (e) => {
+            transparentBg = e.target.checked;
             render();
         });
 
@@ -490,33 +519,43 @@
             render();
         });
 
-        // Download PNG
-        document.getElementById('downloadBtn').addEventListener('click', () => {
-            canvas.toBlob((blob) => {
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'pattern-grid.png';
-                a.click();
-                URL.revokeObjectURL(url);
+        // Export function (without grid lines)
+        function exportCanvas() {
+            const tempTransparent = transparentBg;
+            render(true); // Render without grid
+            return new Promise((resolve) => {
+                canvas.toBlob((blob) => {
+                    render(); // Restore grid
+                    resolve(blob);
+                });
             });
+        }
+
+        // Download PNG
+        document.getElementById('downloadBtn').addEventListener('click', async () => {
+            const blob = await exportCanvas();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'pattern-grid.png';
+            a.click();
+            URL.revokeObjectURL(url);
         });
 
         // Copy to clipboard
         document.getElementById('copyBtn').addEventListener('click', async () => {
             try {
-                canvas.toBlob(async (blob) => {
-                    await navigator.clipboard.write([
-                        new ClipboardItem({ 'image/png': blob })
-                    ]);
+                const blob = await exportCanvas();
+                await navigator.clipboard.write([
+                    new ClipboardItem({ 'image/png': blob })
+                ]);
 
-                    const btn = document.getElementById('copyBtn');
-                    const originalText = btn.textContent;
-                    btn.textContent = 'Copied!';
-                    setTimeout(() => {
-                        btn.textContent = originalText;
-                    }, 1500);
-                });
+                const btn = document.getElementById('copyBtn');
+                const originalText = btn.textContent;
+                btn.textContent = 'Copied!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 1500);
             } catch (err) {
                 console.error('Failed to copy:', err);
                 alert('Failed to copy to clipboard');
