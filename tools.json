@@ -11,6 +11,12 @@
       "icon": "🎨",
       "title": "Color Inspiration",
       "description": "Generate beautiful color palettes with various harmony modes"
+    },
+    {
+      "path": "./pattern-grid/",
+      "icon": "◧",
+      "title": "Pattern Grid",
+      "description": "Create geometric patterns with triangles and arcs"
     }
   ]
 }
