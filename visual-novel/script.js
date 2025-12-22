@@ -169,8 +169,8 @@ function typeText(text, speaker) {
                 tempDiv.textContent = currentChar;
                 textContent.innerHTML += tempDiv.innerHTML;
 
-                // 2文字に1回音を鳴らす（うるさくならないように）
-                if (charIndex % 2 === 0) {
+                // 1文字に1回音を鳴らす
+                if (charIndex % 1 === 0) {
                     playTextSound(speaker);
                 }
 
