@@ -1,6 +1,6 @@
 // 台詞データ
 const dialogues = [
-    { speaker: 'sakana', text: 'この先が次の現場だ' },
+    { speaker: 'sakana', text: 'このまま少し行けば現場だ' },
     { speaker: 'desu', text: 'うん' },
     { speaker: 'sakana', text: '今度はグロいやつじゃないといいな' },
     { speaker: 'desu', text: 'うん' },
