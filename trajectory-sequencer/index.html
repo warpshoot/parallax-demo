@@ -303,7 +303,8 @@
 
         <div class="instructions">
             💡 使い方: 色を選んで線を描き、再生ボタンを押すと音が鳴ります。<br>
-            縦の位置で音程が変わり、上が高音、下が低音です。色によって音色が変わります。
+            縦の位置で音程が変わり、上が高音、下が低音です。色によって音色が変わります。<br>
+            🎼 ペンタトニックスケールで美しいメロディーが自然に作れます！
         </div>
     </div>
 
@@ -335,10 +336,11 @@
         // Canvas and context
         let canvas, ctx, playbackLine;
 
-        // C Major Scale: C4 to C5 (extended range)
+        // C Major Pentatonic Scale: More musical, no bad notes
+        // C4, D4, E4, G4, A4, C5, D5, E5, G5, A5, C6
         const SCALE = [
-            261.63, 277.18, 293.66, 311.13, 329.63, 349.23, 369.99, 392.00,
-            415.30, 440.00, 466.16, 493.88, 523.25
+            261.63, 293.66, 329.63, 392.00, 440.00,
+            523.25, 587.33, 659.25, 783.99, 880.00, 1046.50
         ];
 
         // ==================== Audio Setup ====================
@@ -357,7 +359,7 @@
             return SCALE[Math.max(0, Math.min(SCALE.length - 1, index))];
         }
 
-        function playNote(frequency, timbre, duration = 0.15) {
+        function playNote(frequency, timbre, duration = 0.25) {
             const ctx = state.audioContext;
             if (!ctx) return;
 
@@ -369,11 +371,11 @@
             oscillator.type = timbre;
             oscillator.frequency.setValueAtTime(frequency, now);
 
-            // ADSR Envelope
+            // ADSR Envelope - softer and more musical
             gainNode.gain.setValueAtTime(0, now);
-            gainNode.gain.linearRampToValueAtTime(0.3, now + 0.01); // Attack
-            gainNode.gain.linearRampToValueAtTime(0.15, now + 0.06); // Decay to Sustain
-            gainNode.gain.setValueAtTime(0.15, now + duration - 0.1); // Sustain
+            gainNode.gain.linearRampToValueAtTime(0.2, now + 0.02); // Attack
+            gainNode.gain.linearRampToValueAtTime(0.12, now + 0.08); // Decay to Sustain
+            gainNode.gain.setValueAtTime(0.12, now + duration - 0.15); // Sustain
             gainNode.gain.linearRampToValueAtTime(0, now + duration); // Release
 
             oscillator.connect(gainNode);
@@ -691,12 +693,22 @@
             // Only check new positions (skip if we've already checked this x)
             if (x <= state.lastPlaybackX || x >= canvas.width) return;
 
+            // Reduce note density: only play every 8 pixels for more musical result
+            if (x % 8 !== 0) {
+                state.lastPlaybackX = x;
+                return;
+            }
+
             // Get pixel data from the original snapshot (not the current canvas with flashes)
             if (!state.canvasSnapshot) return;
 
             const playedNotes = new Map(); // Track notes by color to avoid duplicates
             const snapshotData = state.canvasSnapshot.data;
             const width = state.canvasSnapshot.width;
+
+            // Group y positions into buckets to avoid too many notes at once
+            const yBuckets = new Map();
+            const bucketSize = 20; // pixels
 
             for (let y = 0; y < canvas.height; y++) {
                 // Calculate index in the snapshot data for pixel at (x, y)
@@ -712,12 +724,14 @@
                     const colorInfo = getColorFromRGB(r, g, b);
                     if (colorInfo) {
                         const frequency = yToFrequency(y, canvas.height);
-                        const key = `${colorInfo.timbre}_${Math.round(frequency)}`;
+                        const bucket = Math.floor(y / bucketSize);
+                        const key = `${colorInfo.timbre}_${bucket}`;
 
-                        if (!playedNotes.has(key)) {
+                        // Only play one note per bucket per color
+                        if (!yBuckets.has(key)) {
                             playNote(frequency, colorInfo.timbre);
                             flashIntersection(x, y, colorInfo.color);
-                            playedNotes.set(key, true);
+                            yBuckets.set(key, true);
                         }
                     }
                 }
